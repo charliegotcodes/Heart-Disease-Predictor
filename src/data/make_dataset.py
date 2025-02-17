@@ -56,36 +56,36 @@ def process_data():
     # Reads all the .data files as CSV's into dataframes and incorporates corresponding 
     # column names and combines the data for training into df_combined and df_cleveland for testing 
     # Are both saved to Interim data as a CSV
-    df_cleveland = pd.read_csv(raw_data_path / "processed.cleveland.data")
     df_Train_Set = pd.read_csv(raw_data_path / "heart.csv")
+    df_Test_Set = pd.read_csv(raw_data_path / "processed.cleveland.data")
     # Ensuring the Shape of the data all matched columns wise before setting
-    print("Shape of Cleveland Data: ",df_cleveland.shape)
-    print("Shape of Train Set Data: ",df_Train_Set.shape)
-    df_cleveland.columns = columns
+    print("Shape of Test Set Data in process_data: ",df_Test_Set.shape)
+    print("Shape of Train Set Data in process_data: ",df_Train_Set.shape)
+    df_Test_Set.columns = columns
     df_Train_Set.columns = columns
-    print(df_cleveland.head())
+    print(df_Test_Set.head())
     print(df_Train_Set.head())
-    df_cleveland.to_csv(process_data_path / "Cleveland_Heart_Disease.csv")
+    df_Test_Set.to_csv(process_data_path / "Test_Set.csv")
     df_Train_Set.to_csv(process_data_path / "Train_Set.csv")
 
 def clean_data():
     # Will remove datapoints with null variables as they are not useable
-    df_unclean_cleveland = pd.read_csv(process_data_path / "Cleveland_Heart_Disease.csv")
-    df_unclean_train_set = pd.read_csv(process_data_path / "Train_Set.csv")
-    df_unclean_cleveland.replace(to_replace='?', value=np.nan, inplace=True)
-    df_unclean_train_set.replace(to_replace='?', value=np.nan, inplace=True)
-    missing_vals_cle = df_unclean_cleveland.isnull().sum()
+    df_unclean_train= pd.read_csv(process_data_path / "Train_Set.csv")
+    df_unclean_test_set = pd.read_csv(process_data_path / "Test_Set.csv")
+    missing_vals_cle = df_unclean_train.isnull().sum()
     print("Cleveland Missing values: ", missing_vals_cle)
-    missing_vals_train = df_unclean_train_set.isnull().sum()
-    print("Training Missing Values: ", missing_vals_train)
-    df_clean_train_set = df_unclean_train_set.dropna()
-    df_clean_cleveland= df_unclean_cleveland.dropna()
-    df_clean_cleveland.drop_duplicates()
-    df_clean_train_set.drop_duplicates()
-    print(df_clean_cleveland.shape)
+    missing_vals_test = df_unclean_test_set.isnull().sum()
+    print("Training Missing Values: ", missing_vals_test)
+    df_unclean_train.replace(to_replace='?', value=np.nan, inplace=True)
+    df_unclean_test_set.replace(to_replace='?', value=np.nan, inplace=True)
+    df_clean_test_set = df_unclean_test_set.dropna()
+    df_clean_train= df_unclean_train.dropna()
+    df_clean_test_set.drop_duplicates()
+    df_clean_train.drop_duplicates()
+    print(df_clean_train.shape)
 
-    df_clean_cleveland.to_csv(processed_data_path / "Test.csv")
-    df_clean_train_set.to_csv(processed_data_path / "Train.csv")
+    df_clean_train.to_csv(processed_data_path / "Test.csv")
+    df_clean_test_set.to_csv(processed_data_path / "Train.csv")
 
 def main():
     if len(data_dir) == 0:
