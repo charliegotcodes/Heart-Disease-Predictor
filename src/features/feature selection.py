@@ -12,15 +12,48 @@ import numpy as np
 
 from pathlib import Path
 
+
+
+# Features Utilized in the dataset:
+# 3 age: age in years
+# 4 sex: sex (1 = male; 0 = female)
+# 9 cp: chest pain type
+#         -- Value 1: typical angina
+#         -- Value 2: atypical angina
+#         -- Value 3: non-anginal pain
+#         -- Value 4: asymptomatic
+# 10 trestbps: resting blood pressure (in mm Hg on admission to the hospital)
+# 12 chol: serum cholestoral in mg/dl
+# 16 fbs: (fasting blood sugar > 120 mg/dl)  (1 = true; 0 = false)
+# 19 restecg: resting electrocardiographic results
+#         -- Value 0: normal
+#         -- Value 1: having ST-T wave abnormality (T wave inversions and/or ST elevation or depression of > 0.05 mV)
+# 32 thalach: maximum heart rate achieved
+# 38 exang: exercise induced angina (1 = yes; 0 = no)
+# 40 oldpeak = ST depression induced by exercise relative to rest
+# 41 slope: the slope of the peak exercise ST segment
+        # -- Value 1: upsloping
+        # -- Value 2: flat
+        # -- Value 3: downsloping
+# 44 ca: number of major vessels (0-3) colored by flourosopy
+# 51 thal: 3 = normal; 6 = fixed defect; 7 = reversable defect
+# 58 target
 # Possible problem is the hot encoding of categorical values to numerical values
 # Fix this and then run the model possibly
 current_dir = Path(__file__).resolve().parent.parent.parent
 feature_dir = os.listdir(current_dir / "Data" / "Selected_Features") 
 
 def load_processed_data(filepath):
-    df_Train = pd.read_csv(filepath / "Data" / "Processed" / "Train.csv")
-    print("Training Data's shape: ", df_Train.shape)
-    return df_Train
+    df_Train = pd.read_csv(filepath / "Data" / "Processed" / "Train.csv", index_col=[0, 1])
+    print("Before encoding:")
+    print(df_Train.head())
+    print("Columns:", df_Train.columns.tolist())
+    df = pd.get_dummies(df_Train, columns=['sex', 'cp','fbs', 'restecg', 'exang', 'slope', 'ca', 'thal'])
+    df = df.applymap(lambda x: int(x) if isinstance(x, bool) else x)
+    print("\nAfter encoding:")
+    print(df.head())
+    print("Columns:", df.columns.tolist())
+    return df
 
 
 def correlation_analysis(df):
@@ -32,8 +65,8 @@ def correlation_analysis(df):
     plt.show()
 
     # Since we are converting categorical variables to numerical values these are the important features according to correlation
-    print("categorical to numerical \n")
-    df = pd.get_dummies(df, columns=['sex', 'cp','fbs', 'restecg', 'exang', 'slope', 'ca', 'thal'])
+    # print("categorical to numerical \n")
+    # df = pd.get_dummies(df, columns=['sex', 'cp','fbs', 'restecg', 'exang', 'slope', 'ca', 'thal'])
     return df
 
 def chi_square_feat_selection(X, y, k=7):

@@ -15,10 +15,11 @@ def load_selected_features(filepath):
 
 def load_Train_Test(filepath, file_name):
     df = pd.read_csv(filepath / "Data" / "Processed" / file_name)
+
     return df
 
 def train_Model(X_train, y_train):
-    model = RandomForestClassifier(n_estimators=100, max_depth = 10, max_features = 'sqrt', min_samples_leaf =1, min_samples_split =2 , random_state = 42)
+    model = RandomForestClassifier( max_depth =5, random_state = 42)
     model.fit(X_train, y_train)
     return model
 

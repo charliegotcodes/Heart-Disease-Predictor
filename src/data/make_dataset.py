@@ -65,8 +65,8 @@ def process_data():
     df_Train_Set.columns = columns
     print(df_Test_Set.head())
     print(df_Train_Set.head())
-    df_Test_Set.to_csv(process_data_path / "Test_Set.csv")
-    df_Train_Set.to_csv(process_data_path / "Train_Set.csv")
+    df_Test_Set.to_csv(process_data_path / "Test_Set.csv", index=False)
+    df_Train_Set.to_csv(process_data_path / "Train_Set.csv", index=False)
 
 def clean_data():
     # Will remove datapoints with null variables as they are not useable
@@ -82,10 +82,14 @@ def clean_data():
     df_clean_train= df_unclean_train.dropna()
     df_clean_test_set.drop_duplicates()
     df_clean_train.drop_duplicates()
-    print(df_clean_train.shape)
+    # print("pre dropping column 0", df_clean_test_set.shape)
+    # df_clean_test_set = df_clean_test_set.drop(df_clean_test_set.columns[0], axis=1)
+    # print("Post dropping column 0", df_clean_test_set.shape)
+    # df_clean_train = df_clean_train.drop(df_clean_train.columns[0], axis=1)
 
-    df_clean_train.to_csv(processed_data_path / "Test.csv")
-    df_clean_test_set.to_csv(processed_data_path / "Train.csv")
+
+    df_clean_train.to_csv(processed_data_path / "Train.csv", index=False)
+    df_clean_test_set.to_csv(processed_data_path / "Test.csv", index=False)
 
 def main():
     if len(data_dir) == 0:
