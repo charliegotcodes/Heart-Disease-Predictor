@@ -6,6 +6,7 @@ from sklearn.feature_selection import SelectKBest, chi2, RFE
 from sklearn.ensemble import RandomForestClassifier
 import seaborn as sns 
 import re
+from sklearn.preprocessing import OneHotEncoder
 
 from pandas import DataFrame
 import numpy as np
@@ -38,22 +39,40 @@ from pathlib import Path
 # 44 ca: number of major vessels (0-3) colored by flourosopy
 # 51 thal: 3 = normal; 6 = fixed defect; 7 = reversable defect
 # 58 target
+
 # Possible problem is the hot encoding of categorical values to numerical values
 # Fix this and then run the model possibly
 current_dir = Path(__file__).resolve().parent.parent.parent
 feature_dir = os.listdir(current_dir / "Data" / "Selected_Features") 
 
 def load_processed_data(filepath):
-    df_Train = pd.read_csv(filepath / "Data" / "Processed" / "Train.csv", index_col=[0, 1])
+    df_Track = pd.read_csv(filepath / "Data" / "Processed" / "Train.csv")
     print("Before encoding:")
-    print(df_Train.head())
-    print("Columns:", df_Train.columns.tolist())
-    df = pd.get_dummies(df_Train, columns=['sex', 'cp','fbs', 'restecg', 'exang', 'slope', 'ca', 'thal'])
-    df = df.applymap(lambda x: int(x) if isinstance(x, bool) else x)
-    print("\nAfter encoding:")
-    print(df.head())
-    print("Columns:", df.columns.tolist())
-    return df
+    print(df_Track.head())
+    print("Columns:", df_Track.columns.tolist())
+    categorical_cols = ['sex', 'cp', 'fbs', 'restecg', 'exang', 'slope', 'ca', 'thal']
+    cols_to_encode = [col for col in categorical_cols if col in df_Track.columns]
+    # if cols_to_encode:
+    #     # Create an instance of OneHotEncoder.
+    #     # Set sparse=False to return a dense array.
+    #     # Optionally, you can use drop='first' to avoid dummy variable trap.
+    #     encoder = OneHotEncoder(sparse_output=False, drop=None)
+        
+    #     # Fit and transform the categorical columns
+    #     encoded_array = encoder.fit_transform(df_Track[cols_to_encode])
+    #     # Get new column names from the encoder
+    #     encoded_col_names = encoder.get_feature_names_out(cols_to_encode)
+    #     # Create a DataFrame from the encoded array with the proper column names
+    #     encoded_df = pd.DataFrame(encoded_array, columns=encoded_col_names, index=df_Track.index)
+        
+    #     # Combine the non-categorical columns with the encoded DataFrame
+    #     df = pd.concat([df_Track.drop(columns=cols_to_encode), encoded_df], axis=1)
+    # else:
+    #     # If no columns to encode, copy the DataFrame
+    #      df = df_Track.copy()
+    # print("Below here\n")
+    # print(df.head)
+    return df_Track
 
 
 def correlation_analysis(df):
@@ -69,14 +88,14 @@ def correlation_analysis(df):
     # df = pd.get_dummies(df, columns=['sex', 'cp','fbs', 'restecg', 'exang', 'slope', 'ca', 'thal'])
     return df
 
-def chi_square_feat_selection(X, y, k=7):
+def chi_square_feat_selection(X, y, k=9):
     chi_selector = SelectKBest(score_func=chi2, k=k)
     chi_selector.fit(X, y)
     selected_features = X.columns[chi_selector.get_support()]
     print("Best Features: ", selected_features)
     return selected_features
 
-def rfe_feature_selection(X, y, k=7):
+def rfe_feature_selection(X, y, k=9):
     model = RandomForestClassifier(random_state=69)
     rfe = RFE(model, n_features_to_select=k)
     rfe.fit(X, y)
@@ -93,7 +112,8 @@ def save_selected_features(df, selected_features, out_file):
 
 def main():
     df_Train = load_processed_data(current_dir)
-    df_Train = df_Train.drop(["Unnamed: 0.1","Unnamed: 0"], axis= 1)
+    print(df_Train.head)
+    print("Here\n")
     df_Train = correlation_analysis(df_Train)
     X = df_Train.drop(columns=["target"])
     y = df_Train["target"]
