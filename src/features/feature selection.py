@@ -1,16 +1,11 @@
 import pandas as pd 
 import matplotlib.pyplot as plt 
-from matplotlib import rcParams
 import os
 from sklearn.feature_selection import SelectKBest, chi2, RFE
 from sklearn.ensemble import RandomForestClassifier
 import seaborn as sns 
 import re
 from sklearn.preprocessing import OneHotEncoder
-
-from pandas import DataFrame
-import numpy as np
-
 from pathlib import Path
 
 
@@ -52,26 +47,6 @@ def load_processed_data(filepath):
     print("Columns:", df_Track.columns.tolist())
     categorical_cols = ['sex', 'cp', 'fbs', 'restecg', 'exang', 'slope', 'ca', 'thal']
     cols_to_encode = [col for col in categorical_cols if col in df_Track.columns]
-    # if cols_to_encode:
-    #     # Create an instance of OneHotEncoder.
-    #     # Set sparse=False to return a dense array.
-    #     # Optionally, you can use drop='first' to avoid dummy variable trap.
-    #     encoder = OneHotEncoder(sparse_output=False, drop=None)
-        
-    #     # Fit and transform the categorical columns
-    #     encoded_array = encoder.fit_transform(df_Track[cols_to_encode])
-    #     # Get new column names from the encoder
-    #     encoded_col_names = encoder.get_feature_names_out(cols_to_encode)
-    #     # Create a DataFrame from the encoded array with the proper column names
-    #     encoded_df = pd.DataFrame(encoded_array, columns=encoded_col_names, index=df_Track.index)
-        
-    #     # Combine the non-categorical columns with the encoded DataFrame
-    #     df = pd.concat([df_Track.drop(columns=cols_to_encode), encoded_df], axis=1)
-    # else:
-    #     # If no columns to encode, copy the DataFrame
-    #      df = df_Track.copy()
-    # print("Below here\n")
-    # print(df.head)
     return df_Track
 
 

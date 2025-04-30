@@ -4,102 +4,162 @@ import os
 import urllib.request
 from pandas import DataFrame
 import numpy as np
-
+import logging
 from pathlib import Path
 
+# LOGGING
+logging.basicConfig(
+    format="%(asctime)s %(levelname)s: %(message)s", level=logging.INFO
+)
+logger = logging.getLogger(__name__)
+
+# PATHING
 current_dir = Path(__file__).resolve().parent.parent.parent
 
-raw_data_path = current_dir / "Data" / "Raw"
-process_data_path = current_dir / "Data" / "Interim"
-processed_data_path = current_dir / "Data" / "Processed"
-data_dir = os.listdir(raw_data_path)
-interim_dir = os.listdir(process_data_path)
-processed_dir = os.listdir(processed_data_path)
+# raw_data_path = current_dir / "Data" / "Raw"
+# process_data_path = current_dir / "Data" / "Interim"
+# processed_data_path = current_dir / "Data" / "Processed"
+data_dir = current_dir/ "Data" / "Raw"
+interim_dir = current_dir / "Data" / "Interim"
+processed_dir = current_dir/ "Data" / "Processed"
 zip_name = "heart_disease.zip"
 zip_name_two = "heart.zip"
 
-# train_data = Kaggle Dataset
-# test_data = Cleaveland Dataset
+UCI_URL = "https://archive.ics.uci.edu/static/public/45/heart+disease.zip"
+UCI_ZIP = data_dir / "heart_disease.zip"
 
+KAGGLE_URL = "https://www.kaggle.com/api/v1/datasets/download/johnsmith88/heart-disease-dataset"
+KAGGLE_ZIP = data_dir / "heart.zip"
+
+# COLUMNS
 # The attribute names given to the data that will be utilized
 columns = ["age", "sex", "cp", "trestbps", "chol", "fbs", "restecg", "thalach", "exang", "oldpeak", "slope", "ca", "thal", "target"]
 
-def download_zip():
-    # Downloads the zip from the given URL if the data_dir is empty only and utilizes urllib.requests
-    # To retrieve the zip file and names it heart_disease.zip
-    if len(data_dir) == 0:
-        URL = "https://archive.ics.uci.edu/static/public/45/heart+disease.zip"
-        urllib.request.urlretrieve(URL,"heart_disease.zip")
-        URL_Two = "https://www.kaggle.com/api/v1/datasets/download/johnsmith88/heart-disease-dataset"
-        urllib.request.urlretrieve(URL_Two,"heart.zip")
+def ensure_dirs():
+    """Create data directories if they do not exist"""
+    for d in (data_dir, interim_dir, processed_dir):
+        d.mkdir(parents=True, exist_ok=True)
+        logger.info(f"Ensured directory: {d}")
 
-def unzip_zip_file():
-    # Unzips the zipfile collected from the URL and places them in the Raw data folder
-    # which is found using the raw_data_path
-    zip_obj = zipfile.ZipFile(zip_name, "r")
-    with zipfile.ZipFile(zip_name) as zip_obj: 
-        zip_obj.extractall(path=raw_data_path)
-    zip_obj = zipfile.ZipFile(zip_name_two, "r")
-    with zipfile.ZipFile(zip_name_two) as zip_obj: 
-        zip_obj.extractall(path=raw_data_path)
-    # dataset = pd.read_csv("heart.csv")
-    # dataset.to_csv(raw_data_path / "Train_Set.csv")
+def download_zip(url: str, dest: Path):
+    """ Download file from given URL if not present """
+    if dest.exists():
+        logger.info(f"Already Downloaded; {dest.name}")
+        return
+    logger.info(f"Downloading {dest.name}...")
+    urllib.request.urlretrieve(url,dest)
+    logger.info(f"Downloaded to {dest}")
 
+def unzip_zip_file(zip_path: Path, target_dir: Path):
+    """ Extracting ZIP file contents into the target_dir """
+    if not zip_path.exists():
+        logger.warning(f"ZIP file not found: {zip_path}")
+        return
+    with zipfile.ZipFile(zip_path, 'r') as zipper:
+        zipper.extractall(path=target_dir)
+    logger.info(f"Extracted {zip_path.name} to {target_dir}")
 
-def clean_up_file():
-    #Removing the zip file since its unecessary
-    os.remove(zip_name)
-    os.remove(zip_name_two)
 
 
 def process_data():
-    # Reads all the .data files as CSV's into dataframes and incorporates corresponding 
-    # column names and combines the data for training into df_combined and df_cleveland for testing 
-    # Are both saved to Interim data as a CSV
-    df_Train_Set = pd.read_csv(raw_data_path / "heart.csv")
-    df_Test_Set = pd.read_csv(raw_data_path / "processed.cleveland.data")
-    # Ensuring the Shape of the data all matched columns wise before setting
-    print("Shape of Test Set Data in process_data: ",df_Test_Set.shape)
-    print("Shape of Train Set Data in process_data: ",df_Train_Set.shape)
-    df_Test_Set.columns = columns
-    df_Train_Set.columns = columns
-    print(df_Test_Set.head())
-    print(df_Train_Set.head())
-    df_Test_Set.to_csv(process_data_path / "Test_Set.csv", index=False)
-    df_Train_Set.to_csv(process_data_path / "Train_Set.csv", index=False)
+    """ Reads raw data and assigns columns and saves to interim as a CSV 
+        processed_cleveland.data -> test.csv
+        heart.csv                -> train.csv
+    """
+    clev_file = data_dir / "processed.cleveland.data"
+    if not clev_file.exists():
+        logger.error(f"Missing Cleveland data: {clev_file}")
+        return 
+    df_clev = pd.read_csv(clev_file, header=None, names=columns)
+    df_clev.to_csv(interim_dir/ "Cleveland_Heart_Disease.csv", index=False)
+    logger.info(f"Saved interim Cleveland data {df_clev.shape}")
+
+    train_file = data_dir / "heart.csv"
+    if not train_file.exists():
+        logger.error(f"Missing train CSV: {train_file}")
+        return
+    df_train = pd.read_csv(train_file)
+    df_train.columns = columns
+    df_train.to_csv(interim_dir / "Train_Set.csv", index=False)
+    logger.info(f"Saved interim Train Data {df_train.shape}")
+
+    print("Head of clev data\n")
+    print(df_clev.head)
+
+    print("Head of train data\n")
+    print(df_train.head)
 
 def clean_data():
-    # Will remove datapoints with null variables as they are not useable
-    df_unclean_train= pd.read_csv(process_data_path / "Train_Set.csv")
-    df_unclean_test_set = pd.read_csv(process_data_path / "Test_Set.csv")
-    missing_vals_cle = df_unclean_train.isnull().sum()
-    print("Cleveland Missing values: ", missing_vals_cle)
-    missing_vals_test = df_unclean_test_set.isnull().sum()
-    print("Training Missing Values: ", missing_vals_test)
-    df_unclean_train.replace(to_replace='?', value=np.nan, inplace=True)
-    df_unclean_test_set.replace(to_replace='?', value=np.nan, inplace=True)
-    df_clean_test_set = df_unclean_test_set.dropna()
-    df_clean_train= df_unclean_train.dropna()
-    df_clean_test_set.drop_duplicates()
-    df_clean_train.drop_duplicates()
-    # print("pre dropping column 0", df_clean_test_set.shape)
-    # df_clean_test_set = df_clean_test_set.drop(df_clean_test_set.columns[0], axis=1)
-    # print("Post dropping column 0", df_clean_test_set.shape)
-    # df_clean_train = df_clean_train.drop(df_clean_train.columns[0], axis=1)
+    """
+    Clean interim CSV by:
+    * remove and replace '?' with NaN 
+    * Dropping rows with any NaN 
+    * Dropping duplicates 
+    * Saving the final Train/Test sets to processed directory
+    """
+    df_train = pd.read_csv(interim_dir / "Train_Set.csv")
+    df_test = pd.read_csv(interim_dir / "Cleveland_Heart_Disease.csv")
+
+    # num_rows_with_missing_train = df_train.eq("?").any(axis=1).sum()
+    # num_rows_with_missing_test = df_test.eq("?").any(axis=1).sum()
+    # print(num_rows_with_missing_train)
+    # No missing values
+    # print(num_rows_with_missing_test)
+    # 6 missing values
+    df_train.replace('?', np.nan, inplace=True)
+    df_test.replace('?', np.nan, inplace=True)
+
+    df_train.dropna(inplace=True)
+    df_test.dropna(inplace=True)
+
+    before_train = df_train.shape[0]
+    df_train.drop_duplicates(inplace=True)
+    after_train = df_train.shape[0]
+    logger.info(f"Train rows: {before_train} -> {after_train} after de-duplication")
+
+    before_test = df_test.shape[0]
+    df_test.drop_duplicates(inplace=True)
+    after_test = df_test.shape[0]
+    logger.info(f"Test rows: {before_test} -> {after_test} after de-duplication")
+
+    df_train.to_csv(processed_dir / "Train.csv", index=False)
+    df_test.to_csv(processed_dir / "Test.csv", index=False)
+    logger.info("Saved Train and Test Sets")
+
+    for col in df_train.columns:
+        df_train[col] = pd.to_numeric(df_train[col], errors='coerce')
+        df_test[col]  = pd.to_numeric(df_test[col], errors='coerce')
+
+    common = pd.merge(
+        df_train,
+        df_test,
+        on=list(df_train.columns),
+        how="inner"
+    )
+
+    print(f"Overlapping rows: {len(common)}")
+    # No overlap between train and test set so the test set will be be new to the model after training 
+    # However the problem with the training set being small could end up being problematic 
+    
 
 
-    df_clean_train.to_csv(processed_data_path / "Train.csv", index=False)
-    df_clean_test_set.to_csv(processed_data_path / "Test.csv", index=False)
 
 def main():
-    if len(data_dir) == 0:
-        download_zip()
-        unzip_zip_file()
-        clean_up_file()
-    if len(interim_dir) == 0:
-        process_data()
-    if len(processed_dir) == 0:
-        clean_data()
+    ensure_dirs()
+
+    download_zip(UCI_URL, UCI_ZIP)
+
+    try:
+        download_zip(KAGGLE_URL, KAGGLE_ZIP)
+    except Exception: 
+        logger.warning("kaggle download failed")
+    
+    unzip_zip_file(UCI_ZIP, data_dir)
+    unzip_zip_file(UCI_ZIP, data_dir)
+
+    process_data()
+
+    clean_data()
     
     
 
