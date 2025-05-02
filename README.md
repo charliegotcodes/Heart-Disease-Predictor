@@ -8,7 +8,7 @@ This project automates data ingestion, cleaning, exploratory analysis, feature s
 Logistic Regression, Random Forest, and Gradient Boosting, evaluated via cross-validated ROC-AUC and hold-out testing.
 
 ## ** Attribute Information **
-
+```
  Features Utilized in the dataset:
  3 age: age in years
  4 sex: sex (1 = male; 0 = female)
@@ -33,7 +33,7 @@ Logistic Regression, Random Forest, and Gradient Boosting, evaluated via cross-v
  44 ca: number of major vessels (0-3) colored by flourosopy
  51 thal: 3 = normal; 6 = fixed defect; 7 = reversable defect
  58 target
-
+```
 
 ## **Repository Structure**
 ```
