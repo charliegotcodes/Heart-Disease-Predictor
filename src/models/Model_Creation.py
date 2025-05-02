@@ -1,81 +1,83 @@
 from pathlib import Path
 import pandas as pd 
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+from sklearn.model_selection import train_test_split,  GridSearchCV, cross_val_score
+from sklearn.metrics import roc_auc_score, classification_report
 
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split,  GridSearchCV
-from sklearn.metrics import accuracy_score 
+BASE = Path(__file__).resolve().parent.parent.parent
+RAW  = BASE / "Data" / "Processed"
+FEATURES = BASE / "Data" / "Selected_Features" / "selected_features.csv"
 
-current_dir = Path(__file__).resolve().parent.parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+PROCESSED_DIR = BASE_DIR / "Data" / "Processed"
+FEATURES_FILE = BASE_DIR / "Data" / "Selected_Features" / "selected_features.csv"
 
-def load_selected_features(filepath):
-    print(filepath / "Data" / "Selected_Features")
-    final_features = pd.read_csv(filepath / "Data" / "Selected_Features" / "selected_features.csv")
-    
-    return final_features.columns.tolist()
+df = pd.read_csv(FEATURES_FILE)
+X = df.drop('target', axis=1)
+y = df['target']
 
-def load_Train_Test(filepath, file_name):
-    df = pd.read_csv(filepath / "Data" / "Processed" / file_name)
+# Train & Test Split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, stratify=y, random_state=64)
+print(f"Train shape: {X_train.shape}, Test shape: {X_test.shape}")
 
-    return df
+# Logistic Regression
+print("\n Logistic Regression (CV ROC-AUC)")
+lr = LogisticRegression(max_iter=1000, class_weight='balanced', solver='liblinear')
+cv_scores = cross_val_score(lr, X_train, y_train, cv=5, scoring='roc_auc')
+print(f"Mean AUC: {cv_scores.mean():.3f} +/- {cv_scores.std():.3f}")
 
-def train_Model(X_train, y_train):
-    model = RandomForestClassifier( max_depth =5, random_state = 42)
-    model.fit(X_train, y_train)
-    return model
+# Fit & evaluate on test
+lr.fit(X_train, y_train)
+y_predict_probability = lr.predict_proba(X_test)[:,1]
+print(f"Test ROC-AUC: {roc_auc_score(y_test, y_predict_probability):.3f}")
+print(classification_report(y_test, lr.predict(X_test)))
 
-def test_model_evaluation(model, X_test, y_test):
-    y_prediction = model.predict(X_test)
-    accuracy = accuracy_score(y_prediction, y_test)
-    print("Accuracy of the model: ", accuracy, "\n")
-    return accuracy
+# Random Forest 
+print("\n Random Forest (CV ROC-AUC)")
+rf = RandomForestClassifier(n_estimators=100, class_weight='balanced', random_state=64)
+cvs_rf = cross_val_score(rf, X_train, y_train, cv=5, scoring = 'roc_auc')
+print(f"Mean AUC: {cvs_rf.mean():.3f} +/- {cvs_rf.std():.3f}")
 
-def hyperparam_tuning(X_train, y_train):
+# Fit & evaluate on test
+rf.fit(X_train, y_train)
+y_predict_probability = rf.predict_proba(X_test)[:,1]
+print(f"Test ROC-AUC: {roc_auc_score(y_test, y_predict_probability):.3f}")
+print(classification_report(y_test, rf.predict(X_test)))
 
-    param_grid = {
-        'n_estimators': [100, 200, 300, 400],
-        'max_depth': [10, 20, 30, None],
-        'min_samples_split': [2, 5, 10],
-        'min_samples_leaf': [1, 2, 4],
-        'max_features': ['sqrt', 'log2']
-    }
+# Gradient Boosting
+# When looking at the results from the classification report there is slightly lower precision/recall on the negative class
+print("\n Gradient Boosting (CV ROC-AUC)")
+gb = GradientBoostingClassifier(n_estimators=100, learning_rate=0.1, random_state=64)
+cvs_gb = cross_val_score(gb, X_train, y_train, cv=5, scoring='roc_auc')
+print(f"Mean AUC: {cvs_gb.mean():.3f} +/- {cvs_gb.std():.3f}")
 
-    grid_search = GridSearchCV(RandomForestClassifier(random_state = 42), param_grid, cv = 5, n_jobs = 1, verbose=2)
-    grid_search.fit(X_train, y_train)
+gb.fit(X_train, y_train)
+y_predict_probability = gb.predict_proba(X_test)[:,1]
+print(f"Test ROC-AUC: {roc_auc_score(y_test, y_predict_probability):.3f}")
+print(classification_report(y_test, gb.predict(X_test)))
 
-    print("Best Parameters:", grid_search.best_params_)
+# Random Forest Hyper-parameter tuning
 
+print("\n Random Forest Hyper Tuning")
+param_grid = {
+    'n_estimators': [100, 150, 200],
+    'max_depth': [None, 5, 8, 10],
+    'min_samples_split': [2, 4, 5]
+}
 
+grid = GridSearchCV( RandomForestClassifier(class_weight='balanced', random_state=64), param_grid, cv=5, scoring='roc_auc', n_jobs=-1)
 
-def main():
-    final_features =  load_selected_features(current_dir)
-    final_features = final_features[:-1]
-    print(final_features)
+grid.fit(X_train, y_train)
+print(f"Best params: {grid.best_params_}")
+print(f"Best CV AUC: {grid.best_score_:.3f}")
 
-    df_Train = load_Train_Test(current_dir, "Test.csv")
-    df_Test = load_Train_Test(current_dir, "Train.csv")
+best_rf = grid.best_estimator_
+y_predict_probability = best_rf.predict_proba(X_test)[:, 1]
+print(f"Test ROC-AUC (best RF): {roc_auc_score(y_test, y_predict_probability):.3f}")
+print(classification_report(y_test, best_rf.predict(X_test)))
 
-    print("Shape of Test Data :", df_Test.shape)
-    print("Shape of Train Data :", df_Train.shape)
-    # X_train, X_test, Y_train, Y_test = train_test_split(df_Train[final_features], df_Train["target"], test_size=0.2, random_state=0)
-    # print("Shape of Test Data :", X_train.shape)
-    train_predictor = df_Train.drop("target", axis=1)
-    test_predictor = df_Test.drop("target", axis=1)
-    X_train, y_train = train_predictor, df_Train["target"]
-    X_test, y_test = test_predictor, df_Test["target"]
-
-    model = train_Model(X_train, y_train)
-    accuracy = test_model_evaluation(model, X_test, y_test)
-    print("Initial Iteration of RFC's accuracy: ", accuracy, "\n")
-
-    # Attempt to increase the accuracy of the model through Tuning Hyperparameters
-    # hyperparam_tuning(X_train, y_train)
-    #Best Parameters: {'max_depth': 10, 'max_features': 'sqrt', 'min_samples_leaf': 1, 'min_samples_split': 2, 'n_estimators': 100}
-
-
-
-
-
-
-
-if __name__ == "__main__":
-    main()
+# After viewing the following results its clear that the test size is quite small with 61 samples and thus test results are noisy.
+# Another outlook is that Logistic Regression is ideal but with tuning CV performance of Random Forest increased to 0.88 on training data.
+# However, Random forest untuned on test values had a higher AUC score compared to tuned so preferably untuned performed better on Highest hold-out AUC 
+# Therefore with the possible problem of over-fitting its preferable by occams razor to choose untuned
