@@ -2,12 +2,12 @@
 
 An end-to-end machine learning pipeline for predicting the presence of heart disease using UCI dataset. 
 
-** Overview ** 
+## ** Overview ** 
 
 This project automates data ingestion, cleaning, exploratory analysis, feature selection, and model training to build a robust heart-disease classifier. The models included in this project is 
 Logistic Regression, Random Forest, and Gradient Boosting, evaluated via cross-validated ROC-AUC and hold-out testing.
 
-** Attribute Information **
+## ** Attribute Information **
 
 # Features Utilized in the dataset:
 # 3 age: age in years
@@ -35,8 +35,8 @@ Logistic Regression, Random Forest, and Gradient Boosting, evaluated via cross-v
 # 58 target
 
 
-**Repository Structure**
-
+## **Repository Structure**
+```
 Heart-Disease-Predictor/
 ├── Data/
 │   ├── Raw/                 # Downloaded ZIPs and extracted files
@@ -64,7 +64,7 @@ cd Heart-Disease-Predictor
 python3 -m venv venv
 source venv.bin.activate
 pip install -r requirements.txt
-
+```
 
 ** Results ** 
 
