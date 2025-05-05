@@ -66,7 +66,7 @@ source venv.bin.activate
 pip install -r requirements.txt
 ```
 
-** Results ** 
+## Results  
 
 Logistic Regression: CV AUC = 0.89, Test AUC = 0.87, Accuracy = 82% 
 Random Forest: CV AUC = 0.86, Test AUC = 0.87
