@@ -1,13 +1,13 @@
-## ** Heart Disease Predictor - UCI Dataset **
+##  Heart Disease Predictor - UCI Dataset 
 
 An end-to-end machine learning pipeline for predicting the presence of heart disease using UCI dataset. 
 
-## ** Overview ** 
+##  Overview  
 
 This project automates data ingestion, cleaning, exploratory analysis, feature selection, and model training to build a robust heart-disease classifier. The models included in this project is 
 Logistic Regression, Random Forest, and Gradient Boosting, evaluated via cross-validated ROC-AUC and hold-out testing.
 
-## ** Attribute Information **
+##  Attribute Information 
 ```
  Features Utilized in the dataset:
  3 age: age in years
